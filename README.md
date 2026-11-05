@@ -1,74 +1,104 @@
-# Kite for Android
+<h1 align="center">Kite for Android</h1>
 
-在手机上写 [Kite](https://github.com/kite-plus/kite) 的文章：离线能写，回到网络里自动同步回电脑。它是 Kite 的**第三个界面**，不是第二个实现——渲染、字数、预览、内容类型都问服务端，客户端只负责把手写下来并存回去。
+<p align="center">
+  <b>在手机上写。离线也写得下去。回到网络就同步回去。</b>
+</p>
 
-- 界面上的改动**先落本地数据库**，再由同步引擎推给服务器，断网、电脑关机都不影响写。
-- 客户端代码由服务端的 OpenAPI 文档**生成**，不是手写请求（见[架构](#架构)）。
-- 只使用 `/api/v1` 现有端点，**不改 Kite 本体**。
+<p align="center">
+  <a href="https://github.com/kite-plus/kite">Kite</a> 的第三个界面：它不重新实现渲染、字数、预览或内容类型，<br>
+  那些都问服务端；它只负责把作者的手机输入落进数据库，再推回电脑上的那个文件夹。
+</p>
 
-## 现在能做什么
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/Amazon2025/kite-android?style=flat-square&color=4a77d6&label=license" alt="License"></a>
+  <a href="gradle/libs.versions.toml"><img src="https://img.shields.io/badge/kotlin-2.2-7F52FF?style=flat-square&logo=kotlin&logoColor=white" alt="Kotlin"></a>
+  <a href="app/build.gradle.kts"><img src="https://img.shields.io/badge/android-8.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white" alt="Android 8.0+"></a>
+  <a href="docs/ROADMAP.md"><img src="https://img.shields.io/badge/status-M1%20in%20progress-4a77d6?style=flat-square" alt="Status"></a>
+</p>
 
-| 能力 | 说明 |
-|---|---|
-| 离线写 | Room 存全部文章，界面只读本地库，不等网络 |
-| 双向同步 | 先推后拉；`updated_from` 只取变化，游标翻页；电脑上删掉的条目也会跟着消失 |
-| 冲突不丢稿 | 服务器说版本过期（409）时两版都留着，编辑页让你二选一 |
-| 配图与封面 | 从相册选图直接传到服务器，正文插图或写成 `meta.cover`，与网页后台一致 |
-| 预览 | 走服务端 `/preview`，WebView 里关掉 JS，图片以文章自身地址解析 |
-| 字数 | 问服务端 `/wordcount`，未联通时退回本地计数 |
-| 分类与字段 | 按 `/content-types` 声明的 schema 渲染：slug、分类 chips、布尔开关、数字、文本 |
-| 状态与定时发布 | 草稿 / 已发布 / 定时 / 归档，定时可挑日期 |
-| 局域网发现 | 扫手机自己所在的私网网段，失败时报告扫了哪些网段、本机地址是什么 |
-| 后台同步 | WorkManager 每 6 小时、有网时跑一次；前台打开、下拉、编辑停手也会同步 |
-| 崩溃留痕 | 未捕获异常写进 `logs/crash.txt`，方便取回 |
+<p align="center">
+  <a href="docs/ROADMAP.md"><b>路线图</b></a> ·
+  <a href="docs/CONNECTION.md"><b>连接方式</b></a> ·
+  <a href="https://github.com/kite-plus/kite"><b>Kite 本体</b></a>
+</p>
 
-还没做：富文本编辑（写的是 Markdown 源码）、附件列表、回收站界面、发布到 GitHub、多站点。这些在[路线图](docs/ROADMAP.md)的 M3/M4。
+## 为什么用它
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>先写下来，再说网络</h3>
+      <p>文章存在手机本地的 Room 数据库里，界面只读数据库。地铁里、电脑关机、路由器断了，都能照常写；没有“保存”按钮，停手就落库。</p>
+    </td>
+    <td width="50%" valign="top">
+      <h3>冲突不替你选，也不丢一边</h3>
+      <p>服务器说“你看到的版本已经过期”时，两个版本都留着：本地正文不动，对面那份存进冲突字段，编辑页给两个选项。默认不覆盖，也不悄悄合并。</p>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <h3>写法和网页后台一样</h3>
+      <p>分类、slug、状态、定时发布，以及站点内容类型声明的字段，都从 <code>/content-types</code> 读来再渲染。配图直接传到服务器，封面写进 <code>meta.cover</code>。</p>
+    </td>
+    <td valign="top">
+      <h3>预览和字数是服务端算的</h3>
+      <p>预览走 <code>POST /preview</code>，拿到的是站点真正渲染出的整页 HTML；字数问 <code>POST /wordcount</code>。客户端不自己跑 Markdown 库，就不会和线上页面分叉。</p>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <h3>契约由文档生成</h3>
+      <p>客户端代码来自服务端 <code>/api/v1/openapi.json</code>（路由表与文档同源）。契约变了就重跑 <code>tools/generate-api.sh</code>，字段对不上是编译期报错，不是运行期的空白。</p>
+    </td>
+    <td valign="top">
+      <h3>只动客户端</h3>
+      <p>只用 <code>/api/v1</code> 现有端点，不改 Kite 本体；需要服务端配合的想法先记进文档，等你决定。后台每 6 小时在有网时兜底同步一次。</p>
+    </td>
+  </tr>
+</table>
 
 ## 快速开始
 
-**1. 电脑上起服务**
+电脑上起服务，绑到它的局域网地址（默认只听回环，手机进不来）：
 
 ```bash
-kite run
+kite run --addr 192.168.1.20:1717        # 换成电脑自己的局域网 IP
 ```
 
-默认只监听 `127.0.0.1`，配好连接方式之后再决定要不要对局域网开放（见下一节）。
+手机上：设置页填同一个地址（**不要带 `/api/v1`**，应用自己补）→ 点「测试连接」→ 用 Kite 后台那套账号登录 → 点「立即同步」。
 
-**2. 让手机连上电脑**，三种方式，按安全程度排：
-
-| 方式 | 电脑端 | 手机里填的地址 | 代价 |
-|---|---|---|---|
-| **USB（推荐）** | `kite run` + `adb reverse tcp:1717 tcp:1717` | `http://127.0.0.1:1717` | 拔线就断；重插后要重跑一次 reverse |
-| **同一 WiFi** | `kite run --addr <电脑局域网 IP>:1717` | `http://<电脑局域网 IP>:1717` | 明文，只适合自家网络 |
-| **Tailscale 等** | `kite run` + 装上并登录 | `http://100.x.x.x:1717` | 需要装第三方客户端 |
-
-**3. 手机 App 里**：设置页填地址 → 点「测试连接」（不用密码，探 `/api/v1/setup`）→ 填用户名密码登录 → 点「立即同步」。
-
-密码不会落盘，会话靠 cookie 维持，过期后应用会让你重新登录。
-
-> 局域网走明文 HTTP（`usesCleartextTraffic`），只在自己信任的网络里用。不要把 1717 直接映射到公网——Kite 目前没有 TLS，账号与会话会裸奔。连接方式的完整讨论记录在 [docs/CONNECTION.md](docs/CONNECTION.md)。
+电脑的地址由 DHCP 分配，会变；变了就在应用里重填。局域网走明文 HTTP，只在自己信任的网络里用，也不要把 1717 映射到公网——Kite 目前没有 TLS。
 
 ## 构建
 
-工程已跟随 Android Studio 升到 **Gradle 9.5 + AGP 9.3 + Kotlin 2.2 + KSP2**，构建 JDK 用 21 及以上（推荐直接用 Android Studio 自带的 `jbr`），产物按 Java 17 编。
-
-- **用 Android Studio**：`File → Open` 打开本目录即可；仓库里没有 `gradlew` 与 `gradle-wrapper.jar`，Studio 会用自己那份 Gradle。依赖走阿里云镜像、发行版走腾讯镜像，`settings.gradle.kts` 里已配好。
-- **命令行**（本机装有 Gradle 时）：
+工程用 Gradle 9.5 + AGP 9.3 + Kotlin 2.2 + KSP2，JDK 21 及以上（推荐 Android Studio 自带的 `jbr`），产物按 Java 17 编。仓库里没有 `gradlew` 与 `gradle-wrapper.jar`：用 Android Studio 打开本目录即可；本机装过 Gradle 时也可以直接用命令行。
 
 ```bash
 gradle :app:testDebugUnitTest :api:testDebugUnitTest
 gradle :app:assembleDebug        # 产物 app/build/outputs/apk/debug/app-debug.apk
 ```
 
-**重新生成客户端**（服务端契约变化之后）：
+依赖走阿里云镜像、发行版走腾讯镜像，`settings.gradle.kts` 里已配好。服务端契约变化后重生成客户端：
 
 ```bash
 ./tools/generate-api.sh          # 需要 JDK；缓存生成器 jar，并整体替换 api/src/main/java
 ```
 
-脚本默认从 `http://127.0.0.1:1717/api/v1/openapi.json` 拉文档，可用参数改地址。
+## 它怎么工作
 
-## 架构
+**手机上有自己的一份数据。** 所有文章在 Room 里，界面只读本地库，不等网络。同步引擎是唯一往上说话的东西。
+
+**同步先推后拉。** 顺序反过来会先覆盖掉你离线写的东西。
+
+| 情况 | 做法 |
+|---|---|
+| 推 | 新建走 `POST`，id 换成服务器给的；改动走 `PUT`，带上当初看到的 `If-Match` |
+| 拉 | `updated_from` 只取变化，游标翻页；列表行里没有正文，所以已有行保留本地正文，新条目先读全文再落库 |
+| 删除 | 单独走 `deleted_only=true`；本地有未上传改动的行不删，并扣住水位 |
+| 冲突 | 409 时两版都留，等你选；下次同步不再重试这一行 |
+| 会话过期 / 只读 | 401 与 405 分开处理，不当成网络故障重试 |
+
+## 结构
 
 ```
 app/                         界面与业务
@@ -78,26 +108,10 @@ app/                         界面与业务
 │   └── remote/    KiteGateway（唯一接触生成代码的地方）、cookie 持久化
 ├── domain/        同步：SyncEngine 编排，Pusher / Puller / ConflictResolver 分工
 └── work/          WorkManager 后台同步
-api/                         由 OpenAPI 文档生成的客户端（不要手改）
+api/                         由 OpenAPI 文档生成的客户端，不要手改
 ```
 
-几条规则：
-
-- **依赖单向**：`ui → data → domain`；`domain` 不 import Android，所以能在 JVM 上直接测。
-- **数据库是唯一真相**：屏幕只读 Room，从不直接读网络；同步引擎是唯一往上说话的东西。
-- **同步顺序固定**：先推后拉。反过来会先覆盖掉离线写过的内容。
-- **跨模型的转换只有两处**：`KiteGateway`（生成模型 ↔ 网络）与 `ContentMapping`（生成模型 ↔ 数据库行）。别处出现转换就是漏了一层。
-- **契约以 spec 为准**：`api/openapi.json` 是服务端按路由表生成的文档，抓下来就能重生成客户端。
-
-### 同步怎么处理这几种情况
-
-| 情况 | 做法 |
-|---|---|
-| 列表行没有正文 | 列表只更新元数据，正文保留本地；没见过的条目先 `GET /contents/{id}` 读全文再落库 |
-| 电脑上删了 | `GET /contents?deleted_only=true` 单独一遍；本地有未上传改动的行不删，并扣住水位 |
-| 版本冲突（409） | 本地正文不动，服务器版本存进冲突字段，编辑页给两个选择；下次同步不再重试这一行 |
-| 会话过期（401） | 停止这一轮同步并提示重新登录，不再刷请求 |
-| 服务端只读（405） | 明确提示，不当成网络问题重试 |
+几条规则：依赖单向（`ui → data → domain`，`domain` 不 import Android）；数据库是唯一真相；跨模型的转换只允许出现在 `KiteGateway` 与 `ContentMapping` 两处；契约以 spec 为准。
 
 ## 测试
 
@@ -105,26 +119,37 @@ api/                         由 OpenAPI 文档生成的客户端（不要手改
 gradle :app:testDebugUnitTest
 ```
 
-21 个 JVM 单测 + 生成客户端的 2 个：同步（推/拉/冲突/删除/水位）、仓库（无改动不标脏、meta 合并、定时日期）、发现（网段筛选）、上传（multipart 字段名与 415）、服务端渲染（预览与字数）。
-
-没有 instrumented 测试，也没有截图对比——真机交互靠手测；客户端能说“通过”的边界就到这里。
+21 个 JVM 单测，加上生成客户端的 2 个：同步（推/拉/冲突/删除/水位）、仓库（无改动不标脏、meta 合并、定时日期）、发现（网段筛选）、上传（multipart 字段名与 415）、服务端渲染（预览与字数）。没有 instrumented 测试，也没有截图对比——真机交互靠手测，能说“通过”的边界就到这里。
 
 ## 排错
 
-**闪退但拿不到堆栈**：`CrashLog` 会写到 `/sdcard/Android/data/com.kiteplus.kite.mobile/files/logs/crash.txt`，用 `adb pull` 取回；USB 调试时 `adb logcat *:E` 更快。
+<details>
+<summary><b>闪退但拿不到堆栈</b></summary>
 
-**连不上**：
+`CrashLog` 会把未捕获异常写到 `/sdcard/Android/data/com.kiteplus.kite.mobile/files/logs/crash.txt`：
 
-1. 必须跑 `kite run`，不是 `kite serve`——serve 只有静态站点，`/api/v1/*` 一律 404。
-2. 地址填局域网 IP，不要填 `127.0.0.1`（除非走 USB 的 `adb reverse`）；不要带 `/api/v1` 后缀。
-3. 手机和电脑要在同一网段；路由器开了客户端隔离（访客网络常见）会挡住。
-4. Windows 防火墙首次弹窗时，专用/公用网络都要放行；网络类别是「公用」时，只放行「专用」的规则不生效。
-5. 电脑的地址是 DHCP 租的，会变；变了就在 App 里重新填，或在路由器上做地址绑定。
+```bash
+adb pull /sdcard/Android/data/com.kiteplus.kite.mobile/files/logs/crash.txt
+```
+
+有 USB 调试时 `adb logcat -c && adb logcat *:E` 更直接。
+
+</details>
+
+<details>
+<summary><b>连不上电脑上的 Kite</b></summary>
+
+1. 跑 `kite run`，不是 `kite serve`——serve 只有静态站点，`/api/v1/*` 一律 404。
+2. 地址别带 `/api/v1` 后缀，应用自己拼。
+3. 手机与电脑要在同一网段；访客网络常开客户端隔离，会挡住。
+4. Windows 防火墙首次弹窗时专用/公用网络都要放行；网络类别是「公用」时，只放行「专用」的规则不生效。
+5. 电脑地址是 DHCP 租的，会变；变了重填，或在路由器上做地址绑定。
+
+</details>
 
 ## 文档
 
-- [docs/ROADMAP.md](docs/ROADMAP.md) — 里程碑与工程基线
-- [docs/CONNECTION.md](docs/CONNECTION.md) — 连接方式的现状、候选与取舍（只记录，未决定）
+[路线图](docs/ROADMAP.md)：里程碑与工程基线 · [连接方式](docs/CONNECTION.md)：现状、候选与取舍
 
 ## 许可
 

@@ -14,7 +14,7 @@ Kite 有三个界面：web admin、CLI、以及这里说的移动端。移动端
 
 | 方面 | 要求 |
 |---|---|
-| 契约 | 由 `/api/v1/openapi.json` 生成客户端代码（架构文档 §19）；契约快照 `api/openapi.json` 入库，生成物不入库 |
+| 契约 | 由 `/api/v1/openapi.json` 生成客户端代码（架构文档 §19）；契约快照 `api/openapi.json` 与生成物 `api/src/main/java` 都入库，仓库可直接构建，随时可用 `tools/generate-api.sh` 重生成 |
 | 手写请求 | CI 脚本禁止 Retrofit 注解出现在 generated 目录之外 |
 | 分层 | `ui → domain → data` 单向；`domain` 不 import Android；等价于 Kite 的 `scripts/check-imports.sh` |
 | 提交 | Conventional Commits，小写、带 scope、结尾不加句号 |
