@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Null theme: Compose draws the whole screen, and Material 3's colours
+         come from the theme in ui/theme. The framework theme only has to keep
+         the action bar out of the way. -->
+    <style name="Theme.Kite" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+</resources>
